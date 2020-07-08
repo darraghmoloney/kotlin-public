@@ -1,0 +1,437 @@
+package minesweeper
+import java.util.*
+import kotlin.random.Random
+
+/**
+ * A Minesweeper console game implementation in Kotlin.
+ * Based on a project in JetBrains academy's Kotlin Developer course.
+ */
+class Mine(val mines: Int = 9, val height: Int = 9, val width: Int = 9) {
+
+    //Mine locations generated later, to ensure the first move is not game over.
+    private lateinit var mineLocs: MutableSet<Int>
+
+    var board = makeBoard()
+    var shownBoard = hideMines(board)
+
+    var marked = 0
+
+    var gameOver = false
+    var won = false
+    var exited = false /* for correct game end message */
+
+    var movesMade = 0
+
+
+    companion object Symbols {
+        const val blankSymbol = "." //Unexplored tile
+        const val mineSymbol = "X"
+        const val markSymbol = "*" //User guess toggled mark
+        const val openedSymbol = " "
+    }
+
+    fun makeMineLocs(firstX: Int, firstY: Int) {
+        var randLocs = mutableSetOf<Int>()
+
+        while (randLocs.size < mines) {
+
+            //Random location based on board size
+            var nextLoc = Random.nextInt(0, height * width)
+
+            //Convert to row, col to ensure initial click is not included
+            //as mine location
+            var nextX = nextLoc / 9
+            var nextY = nextLoc % 9
+
+            if (nextX == firstX && nextY == firstY) {
+                continue
+            } else {
+                randLocs.add( Random.nextInt(0, height * width) )
+            }
+
+
+        }
+        mineLocs = randLocs
+    }
+
+    /** Originally this function had a special implementation
+     * Not really necessary anymore
+     */
+    fun makeBoard(): Array<Array<String>> {
+        var newBoard = Array(height) { Array<String>(width) {Mine.blankSymbol}}
+
+
+        return newBoard
+
+    }
+
+    /** Counts surrounding mines & marks number on square of hidden board.
+     *
+     * params: firstX, firstY -> initial played guess location.
+     * necessary to prevent game over condition on first move,
+     * by delaying the generation of mine locations and avoiding
+     * the first played location
+     * */
+    fun markMines(firstX: Int, firstY: Int) {
+
+        makeMineLocs(firstX, firstY) //generate mine locations
+
+        //Add mines to board
+        var counter = 0
+
+        for (i in board.indices) {
+            for (j in board[i].indices) {
+                if (mineLocs.contains(counter)) {
+                    board[i][j] = Mine.mineSymbol
+                }
+                counter++
+            }
+        }
+
+        //Add numbers to board, by checking surrounding mines count
+        var newBoard = board
+        for (i in newBoard.indices) {
+            for (j in newBoard[i].indices) {
+
+                if (newBoard[i][j] == Mine.mineSymbol) {
+                    continue
+                }
+
+                val rowBefore = i > 0
+                val rowAfter = i < newBoard.size - 1
+
+                val colBefore = j > 0
+                val colAfter = j < newBoard[i].size - 1
+
+                var closeMines = 0
+
+                //check previous row
+                if (rowBefore) {
+                    if (colBefore) {
+                        if (newBoard[i-1][j-1] == Mine.mineSymbol) {
+                            closeMines++
+                        }
+                    }
+                    if (newBoard[i-1][j] == Mine.mineSymbol) {
+                        closeMines++
+                    }
+                    if (colAfter) {
+                        if (newBoard[i-1][j+1] == Mine.mineSymbol) {
+                            closeMines++
+                        }
+                    }
+                }
+
+                if (colBefore) {
+                    if (newBoard[i][j-1] == Mine.mineSymbol) {
+                        closeMines++
+                    }
+                }
+                if (colAfter) {
+                    if (newBoard[i][j+1] == Mine.mineSymbol) {
+                        closeMines++
+                    }
+                }
+
+                if (rowAfter) {
+                    if (colBefore) {
+                        if (newBoard[i+1][j-1] == Mine.mineSymbol) {
+                            closeMines++
+                        }
+                    }
+                    if (newBoard[i+1][j] == Mine.mineSymbol) {
+                        closeMines++
+                    }
+                    if (colAfter) {
+                        if (newBoard[i+1][j+1] == Mine.mineSymbol) {
+                            closeMines++
+                        }
+                    }
+                }
+
+                if(closeMines > 0) {
+                    newBoard[i][j] = closeMines.toString()
+                }
+            }
+        }
+
+        board = newBoard
+    }
+
+    /**
+     * Uses the secret "hidden" board to make the gameplay
+     * board the player sees by referring to it as needed.
+     */
+    fun hideMines(nBoard: Array<Array<String>>): Array<Array<String>> {
+        var hiddenBoard = copyBoard()
+        for (i in hiddenBoard.indices) {
+            for (j in hiddenBoard[i].indices) {
+                // if (hiddenBoard[i][j] == Mine.mineSymbol) {
+                hiddenBoard[i][j] = Mine.blankSymbol
+                // }
+            }
+        }
+        return hiddenBoard
+    }
+
+    fun print() {
+
+        var topLine: String = " | "
+        var nextLine: String = "-| "
+
+        for (i in 1..width) {
+            topLine += "$i "
+            nextLine += "-" + " "
+        }
+        topLine += "|"
+        nextLine += "|"
+
+        println(topLine + "\n" + nextLine)
+        var count = 1
+        for (line in shownBoard) {
+            print("$count| ")
+            for (str in line) {
+                print(str + " ")
+            }
+            println("|")
+            count++
+        }
+
+        println(nextLine)
+    }
+
+    fun copyBoard(): Array<Array<String>> {
+        var copy = Array(height) { Array<String>(width) {Mine.blankSymbol}}
+
+        for (i in copy.indices) {
+            for (j in copy[i].indices) {
+                copy[i][j] = board[i][j]
+            }
+        }
+
+        return copy
+    }
+
+
+    /**
+     * Function to place a mine mark on a given spot
+     */
+    fun checkSpot(x: Int, y: Int): Boolean {
+        when (shownBoard[x][y]) {
+            "1", "2", "3", "4", "5", "6", "7", "8" -> {
+                println("There is a number here!")
+                return false
+            }
+            Mine.blankSymbol -> {
+                shownBoard[x][y] = Mine.markSymbol
+                marked++
+            }
+            Mine.markSymbol -> {
+                shownBoard[x][y] = Mine.blankSymbol
+                marked--
+            }
+        }
+
+        if (marked == mines) {
+            checkGameOver()
+        }
+        return true
+    }
+
+    /**
+     * Try to "clear" this spot and surrounding area,
+     * revealing empty tiles up to the nearest number boundary zone
+     * using a boundary fill algorithm.
+     * Should only be triggered if a mine wasn't directly
+     * stepped on
+     */
+    fun explore(x: Int, y: Int) {
+
+//        val numbers = arrayOf<String>("1", "2", "3", "4", "5", "6", "7", "8")
+
+        //Bounds checking
+        if (x < 0 || y < 0 || x >= width || y >= height) {
+            return
+        }
+
+
+        when(shownBoard[x][y]) {
+            "1", "2", "3", "4", "5", "6", "7", "8" -> return
+            Mine.openedSymbol -> return
+
+        }
+
+        when (board[x][y]) {
+            "1", "2", "3", "4", "5", "6", "7", "8" -> {
+                shownBoard[x][y] = board[x][y]
+                return
+            }
+            Mine.blankSymbol -> shownBoard[x][y] = Mine.openedSymbol
+            Mine.mineSymbol -> return
+            // else -> shownBoard[x][y] = board[x][y]
+        }
+
+        //x-1 y -`
+
+        //Checking boundary fill in 4 directions.
+
+//        explore(x-1, y-1)
+        explore(x-1, y)
+//        explore(x-1, y+1)
+
+        explore(x, y-1)
+        explore(x, y+1)
+
+//        explore(x+1, y-1)
+        explore(x+1, y)
+//        explore(x+1, y+1)
+
+    }
+
+    fun checkGameOver() {
+
+        //Not all markers used
+        if (marked != mines) {
+            gameOver = false
+            return
+        }
+
+        for (i in shownBoard.indices) {
+            for (j in shownBoard.indices) {
+                //Mistaken mark
+                if (shownBoard[i][j] == Mine.markSymbol) {
+                    if (board[i][j] != Mine.mineSymbol) {
+                        gameOver = false
+                        return
+                    }
+                //Unexplored tile
+                } else if (shownBoard[i][j] == Mine.blankSymbol) {
+                    gameOver = false
+                    return
+                }
+            }
+        }
+        won = true
+        gameOver = true
+    }
+
+    fun displayFinalBoard() {
+        for (i in shownBoard.indices) {
+            for (j in shownBoard[i].indices) {
+
+                if (board[i][j] == Mine.blankSymbol){
+                    shownBoard[i][j] = Mine.openedSymbol
+                } else {
+                    shownBoard[i][j] = board[i][j]
+                }
+
+            }
+        }
+        print()
+    }
+
+    /**
+     * In game menu
+     */
+    fun prompt() {
+
+        val scanner = Scanner(System.`in`)
+
+        println("Move ${movesMade+1}. Marked: $marked/$mines mines.")
+        print("Type row and column with 'mine' or 'free': ")
+
+        var x = 0
+        var y = 0
+
+//        try {
+        x = scanner.next().toInt() - 1 //account for array 0 index
+        y = scanner.next().toInt() - 1
+//        } catch (e: InputMismatchException) {
+//            println("That wasn't a number.")
+//            return
+
+//        }
+        val action = scanner.next()
+
+        movesMade++
+
+        //Generate mines after first move
+        if (movesMade == 1) {
+            markMines(x, y)
+        }
+
+        when (action) {
+            "mine", "m" -> checkSpot(x, y)
+            "free", "f" -> {
+                if (board[x][y] != Mine.mineSymbol) {
+                    explore(x, y)
+                    if (marked == mines) {
+                        checkGameOver()
+                    }
+                } else {
+
+                    gameOver = true
+                }
+
+//                recheckBoard()
+            }
+            "exit", "q" -> {
+                gameOver = true
+                exited = true
+            }
+        }
+
+        // if (checkSpot(x, y)) {
+        if (gameOver && won) {
+            println("Congratulations! You found all the mines!")
+        } else if (gameOver) {
+            if(!exited) {
+                print("You stepped on a mine. ")
+            }
+            println("Game over.")
+        } else {
+            print()
+            prompt()
+        }
+        // } else {
+        // prompt()
+        // }
+
+    }
+
+
+}
+
+
+fun main() {
+
+    var continuePlay = false
+    val scanner = Scanner(System.`in`)
+
+    do {
+
+        print("How many mines do you want on the field? ")
+        val mines = scanner.nextInt()
+        var game = Mine(mines)
+        // game.markMines()
+
+        game.print()
+
+
+        while (!game.gameOver) {
+            game.prompt()
+        }
+
+        if (!game.exited) {  //display final board on game win/loss only, not simple exit
+            game.displayFinalBoard()
+        }
+
+        print("Play again? (y): ")
+        val choice = scanner.next().toLowerCase()
+        continuePlay = (choice == "y" || choice == "yes")
+
+    } while (continuePlay)
+
+    scanner.close()
+
+}
