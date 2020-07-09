@@ -12,7 +12,6 @@ fun main() {
 
         print("How many mines do you want on the field? ")
 
-
         try {
 
             val input = scanner.nextLine().substringBefore(" ")

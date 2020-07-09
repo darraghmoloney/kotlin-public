@@ -17,7 +17,7 @@ class Mine(val mines: Int = 9, val height: Int = 9, val width: Int = 9) {
 
     private val numsList = arrayOf("1", "2", "3", "4", "5", "6", "7", "8")
 
-    private var board = Array(height) { Array<String>(width) { Mine.blankSymbol }} //Hidden board for actual mine & number placement etc
+    private var board = Array(height) { Array<String>(width) { Mine.blankSymbol }} //Hidden board for making mine & numbers
     private var shownBoard = Array(height) { Array<String>(width) { Mine.blankSymbol}} //Board player can see
 
     private var marked = 0
@@ -51,12 +51,11 @@ class Mine(val mines: Int = 9, val height: Int = 9, val width: Int = 9) {
 
             //Convert to row, col to ensure initial click is not included
             //as mine location
-            var nextX = nextLoc / 9
-            var nextY = nextLoc % 9
+            var nextX = nextLoc / height
+            var nextY = nextLoc % width
 
 
-            if (nextX == firstX && nextY == firstY ||
-                    nextLoc == 0 && firstX == 0 && firstY == 0) { //<- hacky bugfix for location 0,0
+            if (nextX == firstX && nextY == firstY) {
                 continue
             } else {
                 randLocs.add(nextLoc)
@@ -80,15 +79,13 @@ class Mine(val mines: Int = 9, val height: Int = 9, val width: Int = 9) {
         makeMineLocs(firstX, firstY) //generate mine locations
 
         //Add mines to board
-        var counter = 0
+        for (loc in mineLocs) {
 
-        for (i in board.indices) {
-            for (j in board[i].indices) {
-                if (mineLocs.contains(counter)) {
-                    board[i][j] = Mine.mineSymbol
-                }
-                counter++
-            }
+            val nextMineX = loc / height
+            val nextMineY = loc % width
+
+            board[nextMineX][nextMineY] = Mine.mineSymbol
+
         }
 
         //Add numbers to board, by checking surrounding mines count
