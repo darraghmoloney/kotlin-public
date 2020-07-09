@@ -13,6 +13,10 @@ class Mine(val mines: Int = 9, val height: Int = 9, val width: Int = 9) {
     //Mine locations generated later, to ensure the first move is not game over.
     private lateinit var mineLocs: MutableSet<Int>
 
+    private val scanner = Scanner(System.`in`)
+
+    private val numsList = arrayOf("1", "2", "3", "4", "5", "6", "7", "8")
+
     private var board = Array(height) { Array<String>(width) { Mine.blankSymbol }} //Hidden board for actual mine & number placement etc
     private var shownBoard = Array(height) { Array<String>(width) { Mine.blankSymbol}} //Board player can see
 
@@ -190,12 +194,12 @@ class Mine(val mines: Int = 9, val height: Int = 9, val width: Int = 9) {
     private fun toggleMineGuessMark(x: Int, y: Int): Boolean {
         when (shownBoard[x][y]) {
             "1", "2", "3", "4", "5", "6", "7", "8" -> {
-                println("There is a number here!")
+                println("-> There is a number here!")
                 movesMade--
                 return false
             }
             Mine.openedSymbol -> {
-                println("This spot has already been checked")
+                println("-> This spot has already been checked")
                 movesMade--
                 return false
             }
@@ -285,8 +289,6 @@ class Mine(val mines: Int = 9, val height: Int = 9, val width: Int = 9) {
      */
     fun prompt() {
 
-        val scanner = Scanner(System.`in`)
-
 
         //all revealed without stepping on a mine game over == must have won
         if (unopenedTiles == mines) {
@@ -304,9 +306,15 @@ class Mine(val mines: Int = 9, val height: Int = 9, val width: Int = 9) {
             try {
                 x = scanner.next().toInt() - 1 //account for array 0 index
                 y = scanner.next().toInt() - 1
+
+                if (x > height - 1 || y > width - 1 || x < 0 || y < 0) {
+                    println("-> That row and column isn't on the board.")
+                    return
+                }
+
             }
             catch (nfe: NumberFormatException) {
-               println("Please enter two numbers with spaces after each.")
+               println("-> Please enter two numbers with spaces after each.")
                 return
             }
             val action = scanner.next()
@@ -323,7 +331,7 @@ class Mine(val mines: Int = 9, val height: Int = 9, val width: Int = 9) {
                 "free", "f" -> {
                     if (shownBoard[x][y] == Mine.markSymbol) {
 
-                        println("This spot is marked as a mine. Unmark to check around it.")
+                        println("-> This spot is marked as a mine. Unmark to check around it.")
                         movesMade--
 
                     } else if (board[x][y] == Mine.mineSymbol) {
@@ -332,8 +340,9 @@ class Mine(val mines: Int = 9, val height: Int = 9, val width: Int = 9) {
 
                     } else {
 
-                        if (shownBoard[x][y] == Mine.openedSymbol) {
-                            println("${x+1} ${y+1} was already checked.")
+                        if (shownBoard[x][y] == Mine.openedSymbol ||
+                                numsList.contains(shownBoard[x][y])) {
+                            println("-> ${x+1} ${y+1} was already checked.")
                             movesMade--
                         } else {
                             explore(x, y)
@@ -375,7 +384,7 @@ class Mine(val mines: Int = 9, val height: Int = 9, val width: Int = 9) {
             } else {
                 println("You stepped on a mine. Game over.")
             }
-            
+
         } else {
             print()
             prompt()

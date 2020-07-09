@@ -48,7 +48,8 @@ fun main() {
 
         }
         catch (nfe: NumberFormatException) {
-            println("Mines must be a number.")
+            println("Mines must be a number. If you want to quit, type exit.")
+            continuePlay = true
         }
 
     } while (continuePlay)
