@@ -1,5 +1,6 @@
 package minesweeper
 
+import java.lang.NumberFormatException
 import java.util.*
 import kotlin.random.Random
 
@@ -24,7 +25,11 @@ class Mine(val mines: Int = 9, val height: Int = 9, val width: Int = 9) {
 
     private var movesMade = 0
 
+    //Getters
+    fun isGameOver(): Boolean = gameOver
+    fun isExited(): Boolean = exited
 
+    //Gameplay display helpers
     companion object Symbols {
         const val blankSymbol = "." //Unexplored tile
         const val mineSymbol = "X"
@@ -45,7 +50,8 @@ class Mine(val mines: Int = 9, val height: Int = 9, val width: Int = 9) {
             var nextX = nextLoc / 9
             var nextY = nextLoc % 9
 
-            if (nextX == firstX && nextY == firstY || nextLoc == 0 && firstX == 0 && firstY == 0) {
+            if (nextX == firstX && nextY == firstY ||
+                    nextLoc == 0 && firstX == 0 && firstY == 0) { //<- hacky bugfix for location 0,0
                 continue
             } else {
                 randLocs.add(Random.nextInt(0, height * width))
@@ -64,7 +70,7 @@ class Mine(val mines: Int = 9, val height: Int = 9, val width: Int = 9) {
      * by delaying the generation of mine locations and avoiding
      * the first played location
      * */
-    private fun markMines(firstX: Int, firstY: Int) {
+    private fun addMinesToBoard(firstX: Int, firstY: Int) {
 
         makeMineLocs(firstX, firstY) //generate mine locations
 
@@ -81,80 +87,79 @@ class Mine(val mines: Int = 9, val height: Int = 9, val width: Int = 9) {
         }
 
         //Add numbers to board, by checking surrounding mines count
-        var newBoard = board
-        for (i in newBoard.indices) {
-            for (j in newBoard[i].indices) {
+        for (i in board.indices) {
 
-                if (newBoard[i][j] == Mine.mineSymbol) {
+            for (j in board[i].indices) {
+
+                if (board[i][j] == Mine.mineSymbol) {
                     continue
                 }
 
                 val rowBefore = i > 0
-                val rowAfter = i < newBoard.size - 1
+                val rowAfter = i < board.size - 1
 
                 val colBefore = j > 0
-                val colAfter = j < newBoard[i].size - 1
+                val colAfter = j < board[i].size - 1
 
                 var closeMines = 0
 
                 //check previous row
                 if (rowBefore) {
                     if (colBefore) {
-                        if (newBoard[i-1][j-1] == Mine.mineSymbol) {
+                        if (board[i-1][j-1] == Mine.mineSymbol) {
                             closeMines++
                         }
                     }
-                    if (newBoard[i-1][j] == Mine.mineSymbol) {
+                    if (board[i-1][j] == Mine.mineSymbol) {
                         closeMines++
                     }
                     if (colAfter) {
-                        if (newBoard[i-1][j+1] == Mine.mineSymbol) {
+                        if (board[i-1][j+1] == Mine.mineSymbol) {
                             closeMines++
                         }
                     }
                 }
 
                 if (colBefore) {
-                    if (newBoard[i][j-1] == Mine.mineSymbol) {
+                    if (board[i][j-1] == Mine.mineSymbol) {
                         closeMines++
                     }
                 }
                 if (colAfter) {
-                    if (newBoard[i][j+1] == Mine.mineSymbol) {
+                    if (board[i][j+1] == Mine.mineSymbol) {
                         closeMines++
                     }
                 }
 
                 if (rowAfter) {
                     if (colBefore) {
-                        if (newBoard[i+1][j-1] == Mine.mineSymbol) {
+                        if (board[i+1][j-1] == Mine.mineSymbol) {
                             closeMines++
                         }
                     }
-                    if (newBoard[i+1][j] == Mine.mineSymbol) {
+                    if (board[i+1][j] == Mine.mineSymbol) {
                         closeMines++
                     }
                     if (colAfter) {
-                        if (newBoard[i+1][j+1] == Mine.mineSymbol) {
+                        if (board[i+1][j+1] == Mine.mineSymbol) {
                             closeMines++
                         }
                     }
                 }
 
                 if(closeMines > 0) {
-                    newBoard[i][j] = closeMines.toString()
+                    board[i][j] = closeMines.toString()
                 }
             }
         }
 
-        board = newBoard
     }
 
 
     fun print() {
 
-        var topLine: String = " | "
-        var nextLine: String = "-| "
+        var topLine: String = "\t | "
+        var nextLine: String = "\t-| "
 
         for (i in 1..width) {
             topLine += "$i "
@@ -166,7 +171,7 @@ class Mine(val mines: Int = 9, val height: Int = 9, val width: Int = 9) {
         println(topLine + "\n" + nextLine)
         var count = 1
         for (line in shownBoard) {
-            print("$count| ")
+            print("\t$count| ")
             for (str in line) {
                 print(str + " ")
             }
@@ -182,10 +187,15 @@ class Mine(val mines: Int = 9, val height: Int = 9, val width: Int = 9) {
     /**
      * Function to place a mine mark on a given spot
      */
-    private fun checkSpot(x: Int, y: Int): Boolean {
+    private fun toggleMineGuessMark(x: Int, y: Int): Boolean {
         when (shownBoard[x][y]) {
             "1", "2", "3", "4", "5", "6", "7", "8" -> {
                 println("There is a number here!")
+                movesMade--
+                return false
+            }
+            Mine.openedSymbol -> {
+                println("This spot has already been checked")
                 movesMade--
                 return false
             }
@@ -211,41 +221,16 @@ class Mine(val mines: Int = 9, val height: Int = 9, val width: Int = 9) {
      */
     private fun explore(x: Int, y: Int) {
 
-//        val numbers = arrayOf<String>("1", "2", "3", "4", "5", "6", "7", "8")
-
-        //Bounds checking
+        //Bounds checking base case
         if (x < 0 || y < 0 || x >= width || y >= height) {
             return
         }
 
         when(shownBoard[x][y]) {
             "1", "2", "3", "4", "5", "6", "7", "8" -> {
-//                if ( x > 1) {
-//                    if (shownBoard[x-1][y] == Mine.blankSymbol && board[x-1][y] != Mine.mineSymbol) {
-//                        shownBoard[x-1][y] = board[x-1][y]
-//                    }
-//                }
-//                if ( x + 1 < width - 1) {
-//                    if (shownBoard[x+1][y] == Mine.blankSymbol && board[x+1][y] != Mine.mineSymbol) {
-//                        shownBoard[x+1][y] = board[x+1][y]
-//                    }
-//                }
-//
-//                if ( y > 1) {
-//                    if (shownBoard[x][y-1] == Mine.blankSymbol && board[x][y-1] != Mine.mineSymbol) {
-//                        shownBoard[x][y-1] = board[x-1][y]
-//                    }
-//                }
-//                if ( y + 1 < height - 1) {
-//                    if (shownBoard[x][y+1] == Mine.blankSymbol && board[x][y+1] != Mine.mineSymbol) {
-//                        shownBoard[x][y+1] = board[x][y+1]
-//                    }
-//                }
-
                 return
             }
             Mine.openedSymbol -> return
-//
         }
 
         when (board[x][y]) {
@@ -259,26 +244,27 @@ class Mine(val mines: Int = 9, val height: Int = 9, val width: Int = 9) {
                 unopenedTiles--
             }
             Mine.mineSymbol -> return
-            // else -> shownBoard[x][y] = board[x][y]
         }
 
 
-        //Checking boundary fill in 4 directions.
-//        explore(x-1, y-1)
+        //Checking boundary fill in only 4 directions - L, R, Top, Btm.
         explore(x-1, y)
-//        explore(x-1, y+1)
-
         explore(x, y-1)
         explore(x, y+1)
-
-//        explore(x+1, y-1)
         explore(x+1, y)
+
+        //Diagonals - not used.
+//        explore(x-1, y-1)
+//        explore(x-1, y+1)
+//        explore(x+1, y-1)
 //        explore(x+1, y+1)
 
     }
 
 
-
+    /**
+     * Used in case of game over with a loss, to reveal all mine locations
+     */
     fun displayFinalBoard() {
         for (i in shownBoard.indices) {
             for (j in shownBoard[i].indices) {
@@ -315,20 +301,25 @@ class Mine(val mines: Int = 9, val height: Int = 9, val width: Int = 9) {
             var x = 0
             var y = 0
 
-            x = scanner.next().toInt() - 1 //account for array 0 index
-            y = scanner.next().toInt() - 1
-
+            try {
+                x = scanner.next().toInt() - 1 //account for array 0 index
+                y = scanner.next().toInt() - 1
+            }
+            catch (nfe: NumberFormatException) {
+               println("Please enter two numbers with spaces after each.")
+                return
+            }
             val action = scanner.next()
 
             movesMade++
 
             //Generate mines after first move
             if (movesMade == 1) {
-                markMines(x, y)
+                addMinesToBoard(x, y)
             }
 
             when (action) {
-                "mine", "m" -> checkSpot(x, y)
+                "mine", "m" -> toggleMineGuessMark(x, y)
                 "free", "f" -> {
                     if (shownBoard[x][y] == Mine.markSymbol) {
 
@@ -341,7 +332,12 @@ class Mine(val mines: Int = 9, val height: Int = 9, val width: Int = 9) {
 
                     } else {
 
-                        explore(x, y)
+                        if (shownBoard[x][y] == Mine.openedSymbol) {
+                            println("${x+1} ${y+1} was already checked.")
+                            movesMade--
+                        } else {
+                            explore(x, y)
+                        }
 
                     }
                 }
@@ -359,6 +355,13 @@ class Mine(val mines: Int = 9, val height: Int = 9, val width: Int = 9) {
                     println("free\t :-> check a tile and reveal the area around it")
                     println("\t\t3 5 free")
                 }
+                else -> {
+                    println("\"$action\" is not a recognized option.")
+                    println("Type row and column numbers followed by mine / free / exit / help, like:")
+                    println("\t\t1 1 free")
+                    movesMade--
+                    scanner.nextLine() //Clear scanner buffer
+                }
             }
         }
 
@@ -366,11 +369,13 @@ class Mine(val mines: Int = 9, val height: Int = 9, val width: Int = 9) {
         if (gameOver && won) {
             println("Congratulations! You found all the mines!")
         } else if (gameOver) {
+
             if(exited) {
                 println("Exiting...")
             } else {
-                println("Game over. You stepped on a mine.")
+                println("You stepped on a mine. Game over.")
             }
+            
         } else {
             print()
             prompt()
@@ -378,8 +383,7 @@ class Mine(val mines: Int = 9, val height: Int = 9, val width: Int = 9) {
 
     }
 
-    fun isGameOver(): Boolean = gameOver
-    fun isExited(): Boolean = exited
+
 
 
 }
