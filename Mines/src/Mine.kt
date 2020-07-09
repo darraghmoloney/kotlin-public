@@ -76,19 +76,7 @@ class Mine(val mines: Int = 9, val height: Int = 9, val width: Int = 9) {
 
         makeMineLocs(firstX, firstY) //generate mine locations
 
-        //Add mines to board
-        for (loc in mineLocs) {
-
-            val nextMineX = loc / height
-            val nextMineY = loc % width
-
-            board[nextMineX][nextMineY] = Mine.mineSymbol
-
-
-        }
-
-        //Add numbers to board, by checking surrounding mines count
-
+        //Add mines & numbers to board, by checking surrounding mine locs count
         for (i in 0 until height * width) {
 
             val currentX = i / height
