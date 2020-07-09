@@ -15,13 +15,14 @@ fun main() {
 
         try {
 
-            val input = scanner.next()
+            val input = scanner.nextLine().substringBefore(" ")
 
             if (input == "quit" || input == "q" || input == "exit") {
                 break
             }
 
             var mines = input.toInt()
+
 
             if (mines < 0 || mines >= 81) {
                 mines = 6
