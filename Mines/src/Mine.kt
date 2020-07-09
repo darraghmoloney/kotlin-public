@@ -54,11 +54,12 @@ class Mine(val mines: Int = 9, val height: Int = 9, val width: Int = 9) {
             var nextX = nextLoc / 9
             var nextY = nextLoc % 9
 
+
             if (nextX == firstX && nextY == firstY ||
                     nextLoc == 0 && firstX == 0 && firstY == 0) { //<- hacky bugfix for location 0,0
                 continue
             } else {
-                randLocs.add(Random.nextInt(0, height * width))
+                randLocs.add(nextLoc)
             }
 
 
@@ -288,7 +289,6 @@ class Mine(val mines: Int = 9, val height: Int = 9, val width: Int = 9) {
      * In game menu
      */
     fun prompt() {
-
 
         //all revealed without stepping on a mine game over == must have won
         if (unopenedTiles == mines) {

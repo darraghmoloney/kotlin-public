@@ -47,6 +47,10 @@ fun main() {
             val choice = scanner.next().toLowerCase()
             continuePlay = (choice == "y" || choice == "yes")
 
+            if (!continuePlay) println("Goodbye.")
+
+            scanner.nextLine()
+
         }
         catch (nfe: NumberFormatException) {
             println("Mines must be a number. If you want to quit, type exit.")
