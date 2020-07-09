@@ -2,7 +2,6 @@ package minesweeper
 
 import java.lang.NumberFormatException
 import java.util.*
-import kotlin.math.min
 import kotlin.random.Random
 
 /**
@@ -92,32 +91,54 @@ class Mine(val mines: Int = 9, val height: Int = 9, val width: Int = 9) {
 
         for (i in 0 until height * width) {
 
-            var surroundCount = 0
-
             val currentX = i / height
             val currentY = i % width
 
-            if (board[currentX][currentY] == Mine.mineSymbol) {
+            if (i in mineLocs) {
+                board[currentX][currentY] = Mine.mineSymbol
                 continue
             }
 
-            val currentLocVal = i
+            var surroundCount = 0
 
-            val surroundLocs = intArrayOf(
-                //top row
-                currentLocVal - height - 1,
-                currentLocVal - height,
-                currentLocVal - height + 1,
+            val surroundLocs = mutableListOf<Int>()
 
-                //middle l & r
-                currentLocVal - 1,
-                currentLocVal + 1,
+            //top row
+            if (currentX > 0) {
 
-                //bottom
-                currentLocVal + height - 1,
-                currentLocVal + height,
-                currentLocVal + height + 1
-            )
+                if (currentY > 0) {
+                    surroundLocs.add(i - height - 1)
+                }
+
+                surroundLocs.add(i - height)
+
+                if (currentY < width - 1)  {
+                    surroundLocs.add(i - height + 1)
+                }
+
+            }
+
+            //middle l & r
+            if (currentY > 0) {
+                surroundLocs.add(i - 1)
+            }
+
+            if (currentY < width - 1) {
+                surroundLocs.add(i + 1)
+            }
+
+            //bottom
+            if (currentX < height - 1) {
+
+                if (currentY > 0) {
+                    surroundLocs.add(i + height - 1)
+                }
+                surroundLocs.add(i + height)
+
+                if (currentY < width - 1) {
+                    surroundLocs.add(i + height + 1)
+                }
+            }
 
             for (num in surroundLocs) {
                 if (mineLocs.contains(num)) {
