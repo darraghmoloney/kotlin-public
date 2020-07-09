@@ -16,11 +16,11 @@ fun main() {
         game.print()
 
 
-        while (!game.gameOver) {
+        while (!game.isGameOver()) {
             game.prompt()
         }
 
-        if (!game.exited) {  //display final board on game win/loss only, not simple exit
+        if (!game.isExited()) {  //display final board on game win/loss only, not simple exit
             game.displayFinalBoard()
         }
 

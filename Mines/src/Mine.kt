@@ -12,17 +12,17 @@ class Mine(val mines: Int = 9, val height: Int = 9, val width: Int = 9) {
     //Mine locations generated later, to ensure the first move is not game over.
     private lateinit var mineLocs: MutableSet<Int>
 
-    var board = makeBoard()
-    var shownBoard = hideMines()
+    private var board = Array(height) { Array<String>(width) { Mine.blankSymbol }} //Hidden board for actual mine & number placement etc
+    private var shownBoard = Array(height) { Array<String>(width) { Mine.blankSymbol}} //Board player can see
 
-    var marked = 0
+    private var marked = 0
     private var unopenedTiles = height * width //allow automatic game over if all except mines revealed
 
-    var gameOver = false
-    var won = false
-    var exited = false /* for correct game end message */
+    private var gameOver = false
+    private var won = false
+    private var exited = false /* for correct game end message */
 
-    var movesMade = 0
+    private var movesMade = 0
 
 
     companion object Symbols {
@@ -32,7 +32,7 @@ class Mine(val mines: Int = 9, val height: Int = 9, val width: Int = 9) {
         const val openedSymbol = " "
     }
 
-    fun makeMineLocs(firstX: Int, firstY: Int) {
+    private fun makeMineLocs(firstX: Int, firstY: Int) {
         var randLocs = mutableSetOf<Int>()
 
         while (randLocs.size < mines) {
@@ -45,7 +45,7 @@ class Mine(val mines: Int = 9, val height: Int = 9, val width: Int = 9) {
             var nextX = nextLoc / 9
             var nextY = nextLoc % 9
 
-            if (nextX == firstX && nextY == firstY) {
+            if (nextX == firstX && nextY == firstY || nextLoc == 0 && firstX == 0 && firstY == 0) {
                 continue
             } else {
                 randLocs.add(Random.nextInt(0, height * width))
@@ -56,15 +56,6 @@ class Mine(val mines: Int = 9, val height: Int = 9, val width: Int = 9) {
         mineLocs = randLocs
     }
 
-    /** Originally this function had a special implementation
-     * Not really necessary anymore
-     */
-    fun makeBoard(): Array<Array<String>> {
-
-
-        return Array(height) { Array(width) { blankSymbol }}
-
-    }
 
     /** Counts surrounding mines & marks number on square of hidden board.
      *
@@ -73,7 +64,7 @@ class Mine(val mines: Int = 9, val height: Int = 9, val width: Int = 9) {
      * by delaying the generation of mine locations and avoiding
      * the first played location
      * */
-    fun markMines(firstX: Int, firstY: Int) {
+    private fun markMines(firstX: Int, firstY: Int) {
 
         makeMineLocs(firstX, firstY) //generate mine locations
 
@@ -159,21 +150,6 @@ class Mine(val mines: Int = 9, val height: Int = 9, val width: Int = 9) {
         board = newBoard
     }
 
-    /**
-     * Uses the secret "hidden" board to make the gameplay
-     * board the player sees by referring to it as needed.
-     */
-    fun hideMines(): Array<Array<String>> {
-        var hiddenBoard = copyBoard()
-        for (i in hiddenBoard.indices) {
-            for (j in hiddenBoard[i].indices) {
-                // if (hiddenBoard[i][j] == Mine.mineSymbol) {
-                hiddenBoard[i][j] = Mine.blankSymbol
-                // }
-            }
-        }
-        return hiddenBoard
-    }
 
     fun print() {
 
@@ -201,23 +177,12 @@ class Mine(val mines: Int = 9, val height: Int = 9, val width: Int = 9) {
         println(nextLine)
     }
 
-    fun copyBoard(): Array<Array<String>> {
-        var copy = Array(height) { Array<String>(width) { Mine.blankSymbol}}
-
-        for (i in copy.indices) {
-            for (j in copy[i].indices) {
-                copy[i][j] = board[i][j]
-            }
-        }
-
-        return copy
-    }
 
 
     /**
      * Function to place a mine mark on a given spot
      */
-    fun checkSpot(x: Int, y: Int): Boolean {
+    private fun checkSpot(x: Int, y: Int): Boolean {
         when (shownBoard[x][y]) {
             "1", "2", "3", "4", "5", "6", "7", "8" -> {
                 println("There is a number here!")
@@ -234,9 +199,6 @@ class Mine(val mines: Int = 9, val height: Int = 9, val width: Int = 9) {
             }
         }
 
-//        if (marked == mines) {
-//            checkGameOver()
-//        }
         return true
     }
 
@@ -247,7 +209,7 @@ class Mine(val mines: Int = 9, val height: Int = 9, val width: Int = 9) {
      * Should only be triggered if a mine wasn't directly
      * stepped on
      */
-    fun explore(x: Int, y: Int) {
+    private fun explore(x: Int, y: Int) {
 
 //        val numbers = arrayOf<String>("1", "2", "3", "4", "5", "6", "7", "8")
 
@@ -415,6 +377,9 @@ class Mine(val mines: Int = 9, val height: Int = 9, val width: Int = 9) {
         }
 
     }
+
+    fun isGameOver(): Boolean = gameOver
+    fun isExited(): Boolean = exited
 
 
 }
