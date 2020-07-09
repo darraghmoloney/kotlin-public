@@ -177,7 +177,7 @@ class Mine(val mines: Int = 9, val height: Int = 9, val width: Int = 9) {
         for (line in shownBoard) {
             print("\t$count| ")
             for (str in line) {
-                print(str + " ")
+                print("$str ")
             }
             println("|")
             count++
@@ -304,7 +304,16 @@ class Mine(val mines: Int = 9, val height: Int = 9, val width: Int = 9) {
             var y = 0
 
             try {
-                x = scanner.next().toInt() - 1 //account for array 0 index
+
+                val input = scanner.next()
+
+                if (input == "quit" || input == "q" || input == "exit") {
+                    gameOver = true
+                    exited = true
+                    return
+                }
+
+                x = input.toInt() - 1 //account for array 0 index
                 y = scanner.next().toInt() - 1
 
                 if (x > height - 1 || y > width - 1 || x < 0 || y < 0) {
@@ -317,7 +326,7 @@ class Mine(val mines: Int = 9, val height: Int = 9, val width: Int = 9) {
                println("-> Please enter two numbers with spaces after each.")
                 return
             }
-            val action = scanner.next()
+            val action = scanner.next().toLowerCase()
 
             movesMade++
 
