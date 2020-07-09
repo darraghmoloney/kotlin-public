@@ -2,6 +2,7 @@ package minesweeper
 
 import java.lang.NumberFormatException
 import java.util.*
+import kotlin.math.min
 import kotlin.random.Random
 
 /**
@@ -84,73 +85,50 @@ class Mine(val mines: Int = 9, val height: Int = 9, val width: Int = 9) {
 
             board[nextMineX][nextMineY] = Mine.mineSymbol
 
+
         }
 
         //Add numbers to board, by checking surrounding mines count
-        for (i in board.indices) {
 
-            for (j in board[i].indices) {
+        for (i in 0 until height * width) {
 
-                if (board[i][j] == Mine.mineSymbol) {
-                    continue
-                }
+            var surroundCount = 0
 
-                val rowBefore = i > 0
-                val rowAfter = i < board.size - 1
+            val currentX = i / height
+            val currentY = i % width
 
-                val colBefore = j > 0
-                val colAfter = j < board[i].size - 1
+            if (board[currentX][currentY] == Mine.mineSymbol) {
+                continue
+            }
 
-                var closeMines = 0
+            val currentLocVal = i
 
-                //check previous row
-                if (rowBefore) {
-                    if (colBefore) {
-                        if (board[i-1][j-1] == Mine.mineSymbol) {
-                            closeMines++
-                        }
-                    }
-                    if (board[i-1][j] == Mine.mineSymbol) {
-                        closeMines++
-                    }
-                    if (colAfter) {
-                        if (board[i-1][j+1] == Mine.mineSymbol) {
-                            closeMines++
-                        }
-                    }
-                }
+            val surroundLocs = intArrayOf(
+                //top row
+                currentLocVal - height - 1,
+                currentLocVal - height,
+                currentLocVal - height + 1,
 
-                if (colBefore) {
-                    if (board[i][j-1] == Mine.mineSymbol) {
-                        closeMines++
-                    }
-                }
-                if (colAfter) {
-                    if (board[i][j+1] == Mine.mineSymbol) {
-                        closeMines++
-                    }
-                }
+                //middle l & r
+                currentLocVal - 1,
+                currentLocVal + 1,
 
-                if (rowAfter) {
-                    if (colBefore) {
-                        if (board[i+1][j-1] == Mine.mineSymbol) {
-                            closeMines++
-                        }
-                    }
-                    if (board[i+1][j] == Mine.mineSymbol) {
-                        closeMines++
-                    }
-                    if (colAfter) {
-                        if (board[i+1][j+1] == Mine.mineSymbol) {
-                            closeMines++
-                        }
-                    }
-                }
+                //bottom
+                currentLocVal + height - 1,
+                currentLocVal + height,
+                currentLocVal + height + 1
+            )
 
-                if(closeMines > 0) {
-                    board[i][j] = closeMines.toString()
+            for (num in surroundLocs) {
+                if (mineLocs.contains(num)) {
+                    surroundCount++
                 }
             }
+
+            if (surroundCount > 0) {
+                board[currentX][currentY] = surroundCount.toString()
+            }
+
         }
 
     }
