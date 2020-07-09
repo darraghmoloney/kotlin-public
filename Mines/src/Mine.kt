@@ -10,8 +10,8 @@ import kotlin.random.Random
  */
 class Mine(val mines: Int = 9, val height: Int = 9, val width: Int = 9) {
 
-    //Mine locations generated later, to ensure the first move is not game over.
-    private lateinit var mineLocs: MutableSet<Int>
+
+    private var mineLocs = mutableSetOf<Int>()
 
     private val scanner = Scanner(System.`in`)
 
@@ -36,15 +36,14 @@ class Mine(val mines: Int = 9, val height: Int = 9, val width: Int = 9) {
     //Gameplay display helpers
     companion object Symbols {
         const val blankSymbol = "." //Unexplored tile
-        const val mineSymbol = "X"
+        const val mineSymbol = "\u00D7"
         const val markSymbol = "*" //User guess toggled mark
         const val openedSymbol = " "
     }
 
     private fun makeMineLocs(firstX: Int, firstY: Int) {
-        var randLocs = mutableSetOf<Int>()
 
-        while (randLocs.size < mines) {
+        while (mineLocs.size < mines) {
 
             //Random location based on board size
             var nextLoc = Random.nextInt(0, height * width)
@@ -58,12 +57,11 @@ class Mine(val mines: Int = 9, val height: Int = 9, val width: Int = 9) {
             if (nextX == firstX && nextY == firstY) {
                 continue
             } else {
-                randLocs.add(nextLoc)
+                mineLocs.add(nextLoc)
             }
 
-
         }
-        mineLocs = randLocs
+
     }
 
 
@@ -233,6 +231,7 @@ class Mine(val mines: Int = 9, val height: Int = 9, val width: Int = 9) {
                 return
             }
             Mine.openedSymbol -> return
+            Mine.markSymbol -> return
         }
 
         when (board[x][y]) {
@@ -297,8 +296,8 @@ class Mine(val mines: Int = 9, val height: Int = 9, val width: Int = 9) {
             println("Move ${movesMade + 1}. Marked: $marked/$mines mines. Unrevealed: $unopenedTiles")
             print("Type row and column with 'mine' or 'free': ")
 
-            var x = 0
-            var y = 0
+            var x: Int
+            var y: Int
 
             try {
 
