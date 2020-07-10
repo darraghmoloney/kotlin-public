@@ -8,8 +8,7 @@ import kotlin.random.Random
  * A Minesweeper console game implementation in Kotlin.
  * Based on a project in JetBrains academy's Kotlin Developer course.
  */
-class Mine(val mines: Int = 9, val height: Int = 9, val width: Int = 9) {
-
+class Mine(private val mines: Int = 9, private val height: Int = 9, private val width: Int = 9) {
 
     private var mineLocs = mutableSetOf<Int>()
 
@@ -36,7 +35,7 @@ class Mine(val mines: Int = 9, val height: Int = 9, val width: Int = 9) {
     //Gameplay display helpers
     companion object Symbols {
         const val blankSymbol = "." //Unexplored tile
-        const val mineSymbol = "\u00D7"
+        const val mineSymbol = "\u00D7" //Unicode "multiply" symbol
         const val markSymbol = "*" //User guess toggled mark
         const val openedSymbol = " "
     }
@@ -46,12 +45,12 @@ class Mine(val mines: Int = 9, val height: Int = 9, val width: Int = 9) {
         while (mineLocs.size < mines) {
 
             //Random location based on board size
-            var nextLoc = Random.nextInt(0, height * width)
+            val nextLoc = Random.nextInt(0, height * width)
 
             //Convert to row, col to ensure initial click is not included
             //as mine location
-            var nextX = nextLoc / height
-            var nextY = nextLoc % width
+            val nextX = nextLoc / width
+            val nextY = nextLoc - nextX * width //allows different height & width
 
 
             if (nextX == firstX && nextY == firstY) {
@@ -79,8 +78,8 @@ class Mine(val mines: Int = 9, val height: Int = 9, val width: Int = 9) {
         //Add mines & numbers to board, by checking surrounding mine locs count
         for (i in 0 until height * width) {
 
-            val currentX = i / height
-            val currentY = i % width
+            val currentX = i / width
+            val currentY = i - currentX * width
 
             if (i in mineLocs) {
                 board[currentX][currentY] = Mine.mineSymbol
@@ -95,13 +94,13 @@ class Mine(val mines: Int = 9, val height: Int = 9, val width: Int = 9) {
             if (currentX > 0) {
 
                 if (currentY > 0) {
-                    surroundLocs.add(i - height - 1)
+                    surroundLocs.add(i - width - 1)
                 }
 
-                surroundLocs.add(i - height)
+                surroundLocs.add(i - width)
 
                 if (currentY < width - 1)  {
-                    surroundLocs.add(i - height + 1)
+                    surroundLocs.add(i - width + 1)
                 }
 
             }
@@ -119,12 +118,12 @@ class Mine(val mines: Int = 9, val height: Int = 9, val width: Int = 9) {
             if (currentX < height - 1) {
 
                 if (currentY > 0) {
-                    surroundLocs.add(i + height - 1)
+                    surroundLocs.add(i + width - 1)
                 }
-                surroundLocs.add(i + height)
+                surroundLocs.add(i + width)
 
                 if (currentY < width - 1) {
-                    surroundLocs.add(i + height + 1)
+                    surroundLocs.add(i + width + 1)
                 }
             }
 
@@ -209,7 +208,7 @@ class Mine(val mines: Int = 9, val height: Int = 9, val width: Int = 9) {
     private fun explore(x: Int, y: Int) {
 
         //Bounds checking base case
-        if (x < 0 || y < 0 || x >= width || y >= height) {
+        if (x < 0 || y < 0 || x >= height || y >= width) {
             return
         }
 
@@ -280,20 +279,24 @@ class Mine(val mines: Int = 9, val height: Int = 9, val width: Int = 9) {
 
         } else {
 
-            println("Move ${movesMade + 1}. Marked: $marked/$mines mines. Unrevealed: $unopenedTiles")
+            println("Move ${movesMade + 1}. Marked: $marked/$mines mines. Hidden: $unopenedTiles")
             print("Type row and column with 'mine' or 'free': ")
 
-            var x: Int
-            var y: Int
+            val x: Int
+            val y: Int
 
             try {
 
-                val input = scanner.next()
+                val input = scanner.next().toLowerCase()
 
                 if (input == "quit" || input == "q" || input == "exit") {
                     gameOver = true
                     exited = true
                     return
+                }
+
+                if (input == "help" || input == "h") {
+                    showHelp()
                 }
 
                 x = input.toInt() - 1 //account for array 0 index
@@ -309,6 +312,7 @@ class Mine(val mines: Int = 9, val height: Int = 9, val width: Int = 9) {
                println("-> Please enter two numbers with spaces after each.")
                 return
             }
+
             val action = scanner.next().toLowerCase()
 
             movesMade++
@@ -348,13 +352,7 @@ class Mine(val mines: Int = 9, val height: Int = 9, val width: Int = 9) {
                 }
                 "help", "h" -> {
                     movesMade--
-                    println("mine / m: mark, free / f: check, exit / q: quit, help / h: help")
-                    println("Choose a row and column and type them with a space.")
-                    println("Then type the action you want.")
-                    println("mine\t :-> mark or unmark a spot (*) as a mine ")
-                    println("\t\t1 1 mine")
-                    println("free\t :-> check a tile and reveal the area around it")
-                    println("\t\t3 5 free")
+                    showHelp()
                 }
                 else -> {
                     println("\"$action\" is not a recognized option.")
@@ -382,6 +380,19 @@ class Mine(val mines: Int = 9, val height: Int = 9, val width: Int = 9) {
             prompt()
         }
 
+    }
+
+    private fun showHelp() {
+        println()
+        println("mine / m: mark, free / f: check, exit / q: quit, help / h: help")
+        println()
+        println("Choose a row and column and type them with a space.")
+        println("Then type the action you want.")
+        println("mine\t :-> mark or unmark a spot (*) as a mine ")
+        println("\t\t1 1 mine")
+        println("free\t :-> check a tile and reveal the area around it")
+        println("\t\t3 5 free")
+        println()
     }
 
 

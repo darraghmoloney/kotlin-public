@@ -14,7 +14,7 @@ fun main() {
 
         try {
 
-            val input = scanner.nextLine().substringBefore(" ")
+            val input = scanner.nextLine().substringBefore(" ").toLowerCase()
 
             if (input == "quit" || input == "q" || input == "exit") {
                 break
@@ -24,8 +24,8 @@ fun main() {
 
 
             if (mines < 0 || mines >= 81) {
-                mines = 6
-                println("Mines set to 6.")
+                println("$mines won't work. Mines set by default to 9.")
+                mines = 9
             }
 
 
