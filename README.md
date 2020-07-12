@@ -1,7 +1,11 @@
 # kotlin-public
-Practicing some projects with Kotlin
+Practicing some simple projects with Kotlin
 
 ---
 
 ## Mines
-A console implementation of Minesweeper in Kotlin. Based on a [JetBrains Academy](https://www.jetbrains.com/academy/) project.
+An console implementation of Minesweeper. Based on a [JetBrains Academy](https://www.jetbrains.com/academy/) project.
+
+## Checks
+A work-in-progress console Checkers (Draughts) game test
+
