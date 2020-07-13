@@ -1,5 +1,7 @@
 package checker
 
+import checker.Direction.*
+
 enum class Direction(val rowOffset: Int, val colOffset: Int) {
     TOP_LEFT(-1, -1),
     TOP_RIGHT(-1, +1),
@@ -30,6 +32,16 @@ class Checks {
         board[5] = StringBuilder("x-x-x-x-")
         board[6] = StringBuilder("-x-x-x-x")
         board[7] = StringBuilder("x-x-x-x-")
+
+        //testing...
+        board[0] = StringBuilder("-o-o-+-o")
+        board[1] = StringBuilder("o-o-o-o-")
+        board[2] = StringBuilder("-o-+-o-+")
+        board[3] = StringBuilder("+-o-o-o-")
+        board[4] = StringBuilder("-x-+-+-+")
+        board[5] = StringBuilder("+-x-x-x-")
+        board[6] = StringBuilder("-x-x-x-x")
+        board[7] = StringBuilder("x-x-x-x-")
     }
 
     fun printBoard() {
@@ -48,9 +60,9 @@ class Checks {
     /* TODO: implement King-making */
     fun move(row: Int, col: Int, dir: Direction) {
 
-        println("trying to move from ${row+1} ${col+1} in $dir")
+        println("trying to move from ${row+1} ${col+1} to the $dir")
 
-        val playerChar = if (isPlayerX) "x" else "o"
+        val playerChar = getCurrentPlayer()
 
         if (board[row][col].toString() != playerChar) {
             println("No $playerChar at ${row+1} ${col+1}.")
@@ -61,10 +73,12 @@ class Checks {
 
         if (canMove(row, col, dir)) {
             replaceLine(row, col, dir, playerChar)
-            println("moving in $dir direction")
+            println("moved to the $dir")
         } else if (canAttack(row, col, dir)) {
             attack(row, col, dir)
-            println("attacking in $dir direction")
+            println("attacked the $dir")
+        } else {
+            println("can't move to $dir from ${row+1} ${col+1}")
         }
 
     }
@@ -91,14 +105,15 @@ class Checks {
         val replRow = row + dir.rowOffset
         val replCol = col + dir.colOffset
 
+//        if (replCol < 0) println("replCol (offset) $replCol col too low for ${row+1} ${col+1} $dir")
+//        if (replCol > board[row].length) println("row too high for ${row+1} ${col+1} $dir")
+
         return replRow >= 0 && replRow < board.size &&
                 replCol >= 0 && replCol < board[row].length
 
     }
 
     private fun isBlankSpot(row: Int, col: Int):Boolean {
-
-        if (board[row][col] !== '+') println("$row $col not blank - ${board[row][col]}")
 
         return board[row][col] == '+'
 
@@ -120,7 +135,7 @@ class Checks {
 
     private fun isEnemyPiece(row: Int, col: Int): Boolean {
 
-        val otherChar = if (getCurrentPlayer()[0] == 'x') 'o' else 'x'
+        val otherChar = if (getCurrentPlayer() == "x") 'o' else 'x'
 
         return board[row][col] == otherChar
 
@@ -153,6 +168,74 @@ class Checks {
 
     fun changePlayer() {
         isPlayerX = !isPlayerX
+    }
+
+    fun checkMax(startRow: Int, startCol: Int) {
+
+        val playerChar = if (isPlayerX) 'x' else 'o'
+
+        if (board[startRow][startCol] == playerChar) {
+
+            board[startRow][startCol] = '+'
+
+            val max = findMaxPossiblePoints(startRow, startCol, mutableSetOf())
+            println("max possible from here is $max")
+
+            board[startRow][startCol] = playerChar
+
+        } else {
+
+            println("player $playerChar has no piece at ${startRow+1} ${startCol+1}")
+
+        }
+
+    }
+
+    private fun findMaxPossiblePoints(row: Int, col: Int, takenPieceLocs: MutableSet<Int?>): Int {
+
+        var locsStr = "took: ["
+
+        for (loc in takenPieceLocs) {
+            if (loc != null) {
+                locsStr += "(${loc / 8 + 1},${loc % 8 + 1}), " //convert to row & col (+1 for non-zero display index)
+            }
+        }
+
+        locsStr += "]"
+
+
+        var max = 0
+
+        for (direction in values()) {
+
+            val checkRow = row + direction.rowOffset
+            val checkCol = col + direction.colOffset
+
+            val checkLoc = (row + direction.rowOffset) * 8 + (col + direction.colOffset) //Int representation of row & col
+
+            var currentMax = 0
+
+            if (
+                    isInBounds(checkRow, checkCol, direction) &&
+                    isEnemyPiece(checkRow, checkCol) &&
+                    !takenPieceLocs.contains(checkLoc) && //don't take same piece twice
+                    isBlankSpot(checkRow + direction.rowOffset, checkCol + direction.colOffset) //checking "jump" spot free
+            ) {
+                println("${row+1} ${col+1}: $direction ok. \t\t $locsStr -> (${checkRow+1}, ${checkCol+1})")
+                takenPieceLocs.add(checkLoc)
+
+                currentMax = 1 + findMaxPossiblePoints(checkRow + direction.rowOffset, checkCol + direction.colOffset, takenPieceLocs)
+
+            }
+
+            if (currentMax > max) {
+                max = currentMax
+            }
+        }
+
+
+        return max
+
     }
 
 }

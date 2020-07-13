@@ -1,6 +1,7 @@
 package checker
 
 import checker.Direction.*
+import java.lang.NumberFormatException
 import java.util.Scanner
 
 fun main() {
@@ -19,8 +20,8 @@ fun main() {
         var currentPlayer = c.getCurrentPlayer()
         println("move for team $currentPlayer")
 
-        println("type your piece's row, column & move direction (tl, tr, bl, br)")
-        print("[s to change player / q to quit]: ")
+        println("type your piece's row, column & move direction (tl, tr, bl, br) or max")
+        print("[s to change player /  q to quit]: ")
 
         val input = scanner.nextLine()
 
@@ -28,31 +29,42 @@ fun main() {
 
         if (choices[0].isEmpty()) continue
 
-        if (choices[0] == "quit" || choices[0] == "exit" || choices[0] == "q") {
+        val choice1 = choices[0].trim()
+
+        if (choice1 == "quit" || choice1 == "exit" || choice1 == "q") {
 
             exit = true
 
-        } else if (choices[0][0].toLowerCase() == 's') {
+        } else if (choices[0][0] == 's') {
 
             c.changePlayer()
 
         } else {
 
-            val nextRow = choices[0].toInt() - 1
-            val nextCol = choices[1].toInt() - 1
-            val direction = choices[2]
+            try {
+                val nextRow = choices[0].trim().toInt() - 1
+                val nextCol = choices[1].trim().toInt() - 1
+                val action = choices[2]
 
 
-            var dir: Direction = TOP_LEFT
+                var dir: Direction = TOP_LEFT
 
-            when (direction) {
+                when (action) {
 //                "tl" -> dir = TOP_LEFT
-                "tr" -> dir = TOP_RIGHT
-                "bl" -> dir = BOTTOM_LEFT
-                "br" -> dir = BOTTOM_RIGHT
-            }
+                    "tr" -> dir = TOP_RIGHT
+                    "bl" -> dir = BOTTOM_LEFT
+                    "br" -> dir = BOTTOM_RIGHT
+                    "max" -> c.checkMax(nextRow, nextCol)
+                }
 
-            c.move(nextRow, nextCol, dir)
+                if (action != "max") {
+                    c.move(nextRow, nextCol, dir)
+                }
+
+            }
+            catch (nfe: NumberFormatException) {
+                println("error: need 2 numbers and an action...")
+            }
 //            c.printBoard()
         }
 
