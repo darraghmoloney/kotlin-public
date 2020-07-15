@@ -47,17 +47,18 @@ fun main() {
                 val action = choices[2]
 
 
-                var dir: Direction = TOP_LEFT
+                var dir: Direction? = null
 
                 when (action) {
-//                "tl" -> dir = TOP_LEFT
+                    "tl" -> dir = TOP_LEFT
                     "tr" -> dir = TOP_RIGHT
                     "bl" -> dir = BOTTOM_LEFT
                     "br" -> dir = BOTTOM_RIGHT
                     "max" -> c.checkMax(nextRow, nextCol)
+                    else -> println("not sure how to do that. try again...")
                 }
 
-                if (action != "max") {
+                if (action != "max" && dir != null) {
                     c.move(nextRow, nextCol, dir)
                 }
 

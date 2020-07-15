@@ -13,8 +13,8 @@ class Checks {
 
     private var board = Array<StringBuilder>(8) {StringBuilder("")}
 
-    private var xPoints: Int = 0
-    private var oPoints: Int = 0
+    private var xPoints: Int = 12
+    private var oPoints: Int = 12
 
     private var isPlayerX: Boolean = true
 
@@ -46,7 +46,6 @@ class Checks {
 
     fun printBoard() {
         println("  _1_2_3_4_5_6_7_8_")
-//        println("  _________________")
 
         for (lineNum in board.indices)  {
             print("${lineNum+1} |")
@@ -57,14 +56,14 @@ class Checks {
         }
     }
 
-    /* TODO: implement King-making */
+
     fun move(row: Int, col: Int, dir: Direction) {
 
         println("trying to move from ${row+1} ${col+1} to the $dir")
 
         val playerChar = getCurrentPlayer()
 
-        if (board[row][col].toString() != playerChar) {
+        if (board[row][col].toString().toLowerCase() != playerChar) {
             println("No $playerChar at ${row+1} ${col+1}.")
             return
         }
@@ -72,11 +71,29 @@ class Checks {
         println("$playerChar currently at ${row+1} ${col+1}")
 
         if (canMove(row, col, dir)) {
-            replaceLine(row, col, dir, playerChar)
+
+            val alreadyKing = board[row][col].isUpperCase()
+
+            //king making check
+            //rules -> 1. reached enemy's first row. 2.enemy has captured pieces available to king them.
+            if (!alreadyKing &&
+                    isPlayerX && row + dir.rowOffset == 0 && xPoints < 12 ||
+                    !isPlayerX && row + dir.rowOffset == 7 && oPoints < 12) {
+
+                    replaceLine(row, col, dir, playerChar.toUpperCase())
+
+                    if (isPlayerX) xPoints++ else oPoints ++
+
+            } else { //continue as normal
+                replaceLine(row, col, dir, board[row][col].toString())
+            }
+
             println("moved to the $dir")
+
         } else if (canAttack(row, col, dir)) {
             attack(row, col, dir)
             println("attacked the $dir")
+
         } else {
             println("can't move to $dir from ${row+1} ${col+1}")
         }
@@ -86,17 +103,45 @@ class Checks {
     private fun attack(row: Int, col: Int, dir: Direction) {
         if (canAttack(row, col, dir)) {
             replaceLineAttack(row, col, dir)
-            if (isPlayerX) {
-                xPoints++
+
+            val alreadyKing = board[row][col].isUpperCase()
+
+            //king making check
+            if (!alreadyKing) {
+                if (isPlayerX && row + dir.rowOffset == 1 && xPoints < 12 || //attack moves 3 lines, so attacking row 1 will land at row 0
+                        !isPlayerX && row + dir.rowOffset == 6 && oPoints < 12) {
+
+                    replaceLine(row+dir.rowOffset, col+dir.colOffset, dir, getCurrentPlayer().toUpperCase())
+
+                    if (isPlayerX) {
+                        xPoints++
+                        println("kinged X")
+                    } else {
+                        oPoints++
+                        println("kinged Y")
+                    }
+
+                }
+
             } else {
-                oPoints++
+                replaceLine(row, col, dir, board[row][col].toString())
             }
+
+
+            if (isPlayerX) {
+                oPoints--
+            } else {
+                xPoints--
+            }
+
             println( "x points: $xPoints o points: $oPoints")
         }
+
         if (isGameOver()) {
             println("game over. won by ${getCurrentPlayer()}")
             gameWon = true
         }
+
     }
 
 
@@ -104,10 +149,6 @@ class Checks {
 
         val replRow = row + dir.rowOffset
         val replCol = col + dir.colOffset
-
-//        if (replCol < 0) println("replCol (offset) $replCol col too low for ${row+1} ${col+1} $dir")
-//        if (replCol > board[row].length) println("row too high for ${row+1} ${col+1} $dir")
-
         return replRow >= 0 && replRow < board.size &&
                 replCol >= 0 && replCol < board[row].length
 
@@ -137,16 +178,17 @@ class Checks {
 
         val otherChar = if (getCurrentPlayer() == "x") 'o' else 'x'
 
-        return board[row][col] == otherChar
+        return board[row][col].toLowerCase() == otherChar
 
     }
 
-    private fun replaceLine(row: Int, col: Int, dir: Direction, replaceChar: String) {
+    private fun replaceLine(row: Int, col: Int, dir: Direction, replaceChar: String, currentChar: String = "+") {
 
-        board[row].replace(col, col+1, "+") //change current
+        board[row].replace(col, col+1, currentChar) //change current
 
         val replRow = row + dir.rowOffset
         val replCol = col + dir.colOffset
+
 
         board[replRow].replace(replCol, replCol+1, replaceChar)
 
@@ -154,14 +196,27 @@ class Checks {
 
     private fun replaceLineAttack(row: Int, col: Int, dir: Direction) {
 
-        val replaceChar = getCurrentPlayer()
-        replaceLine(row, col, dir, "+")
-        replaceLine(row + dir.rowOffset, col + dir.colOffset, dir, replaceChar)
+        val replaceChar = board[row][col].toString()
+
+        val pieceAttacked = board[row + dir.rowOffset][col + dir.colOffset]
+        println("attacked this $pieceAttacked")
+
+        //replace current & next together
+       replaceLine(row, col, dir, "+")
+
+        //then repeat for line after, so 3 lines are changed.
+        //with check for king (uppercase char)
+        if (pieceAttacked.isUpperCase()) {
+            replaceLine(row + dir.rowOffset, col + dir.colOffset, dir, replaceChar, pieceAttacked.toLowerCase().toString())
+        } else {
+            replaceLine(row + dir.rowOffset, col + dir.colOffset, dir, replaceChar)
+        }
+
 
     }
 
     private fun isGameOver(): Boolean {
-        return xPoints == 12 || oPoints == 12
+        return xPoints == 0 || oPoints == 0
     }
 
     fun getCurrentPlayer(): String = if (isPlayerX) "x" else "o"
@@ -174,11 +229,13 @@ class Checks {
 
         val playerChar = if (isPlayerX) 'x' else 'o'
 
-        if (board[startRow][startCol] == playerChar) {
+        if (board[startRow][startCol].toLowerCase() == playerChar) {
+
+            val enemyPiecesLeft = makeEnemyPiecesArray()
 
             board[startRow][startCol] = '+'
 
-            val max = findMaxPossiblePoints(startRow, startCol, mutableSetOf())
+            val max = findMaxPossiblePoints(startRow, startCol, enemyPiecesLeft, mutableListOf())
             println("max possible from here is $max")
 
             board[startRow][startCol] = playerChar
@@ -191,7 +248,27 @@ class Checks {
 
     }
 
-    private fun findMaxPossiblePoints(row: Int, col: Int, takenPieceLocs: MutableSet<Int?>): Int {
+    private fun makeEnemyPiecesArray(): Array<IntArray> {
+
+        var enemyPiecesArray = Array(8){ IntArray(8) }
+
+        val enemyChar = if (isPlayerX) 'o' else 'x'
+
+        board.indices.forEach { row ->
+            board[row].indices.forEach { col ->
+                if (board[row][col] == enemyChar) {
+                    enemyPiecesArray[row][col] = 1
+                } else if (board[row][col] == enemyChar.toUpperCase()) { //king
+                    enemyPiecesArray[row][col] = 2
+                }
+            }
+        }
+
+        return  enemyPiecesArray
+
+    }
+
+    private fun findMaxPossiblePoints(row: Int, col: Int, enemyPiecesLeft: Array<IntArray>, takenPieceLocs: MutableList<Int?>): Int {
 
         var locsStr = "took: ["
 
@@ -203,7 +280,6 @@ class Checks {
 
         locsStr += "]"
 
-
         var max = 0
 
         for (direction in values()) {
@@ -211,20 +287,22 @@ class Checks {
             val checkRow = row + direction.rowOffset
             val checkCol = col + direction.colOffset
 
-            val checkLoc = (row + direction.rowOffset) * 8 + (col + direction.colOffset) //Int representation of row & col
+            val checkLoc = (row + direction.rowOffset) * 8 + (col + direction.colOffset)
 
             var currentMax = 0
 
             if (
                     isInBounds(checkRow, checkCol, direction) &&
                     isEnemyPiece(checkRow, checkCol) &&
-                    !takenPieceLocs.contains(checkLoc) && //don't take same piece twice
+                    enemyPiecesLeft[checkRow][checkCol] > 0 &&
                     isBlankSpot(checkRow + direction.rowOffset, checkCol + direction.colOffset) //checking "jump" spot free
             ) {
                 println("${row+1} ${col+1}: $direction ok. \t\t $locsStr -> (${checkRow+1}, ${checkCol+1})")
                 takenPieceLocs.add(checkLoc)
+                //mark piece as taken. decrementing as king counts as 2 pieces and can be captured twice.
+                enemyPiecesLeft[checkRow][checkCol]--
 
-                currentMax = 1 + findMaxPossiblePoints(checkRow + direction.rowOffset, checkCol + direction.colOffset, takenPieceLocs)
+                currentMax = 1 + findMaxPossiblePoints(checkRow + direction.rowOffset, checkCol + direction.colOffset, enemyPiecesLeft, takenPieceLocs)
 
             }
 
